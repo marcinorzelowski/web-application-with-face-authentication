@@ -1,0 +1,28 @@
+
+.container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+mat-card-header {
+  display: flex;
+  justify-content: center;
+}
+
+.title {
+  text-align: center;
+  color: #3f51b5;
+}
+
+
+mat-card {
+  max-width: 400px;
+  width: 100%;
+  border-radius: 25px;
+  border: 2px solid #3f51b5;
+}
+
+mat-card-header {
+}

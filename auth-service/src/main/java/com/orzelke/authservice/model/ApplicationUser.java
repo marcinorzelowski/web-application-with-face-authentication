@@ -31,6 +31,12 @@ public class ApplicationUser implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
+    private List<Diploma> diplomas;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Feature> features;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(role.name()));
