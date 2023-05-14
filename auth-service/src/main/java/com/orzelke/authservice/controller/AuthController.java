@@ -32,7 +32,7 @@ public class AuthController {
     public ResponseEntity<AuthenticationResponse> login(
             @RequestParam("user") String user,
             @RequestPart("image") MultipartFile image
-    ) throws JsonProcessingException {
+    ) throws Exception {
         AuthenticationRequest request = objectMapper.readValue(user, AuthenticationRequest.class);
         return ResponseEntity.ok(authenticationService.login(request, image));
     }

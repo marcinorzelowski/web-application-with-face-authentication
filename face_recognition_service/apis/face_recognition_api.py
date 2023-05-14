@@ -96,3 +96,5 @@ class MultipleImagesUpload(Resource):
             return {"error": str(e.message)}, 400  # Use a colon (:) instead of a comma (,)
         except Exception as e:
             return {"error": str(e)}, 500
+
+

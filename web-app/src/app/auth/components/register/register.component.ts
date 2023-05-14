@@ -14,7 +14,6 @@ import {CameraComponent} from "../../../shared/components/camera/camera.componen
 export class RegisterComponent implements OnInit {
   public form!: FormGroup;
   public files: File[] = [];
-  public images: string[] = [];
 
   constructor(private authService: AuthService,
               private router: Router,
@@ -41,10 +40,12 @@ export class RegisterComponent implements OnInit {
     })
   }
 
-  public addImage(event: any): void {
-    const file = event.target.files[0];
-    if (file) {
-      this.files.push(file);
+  public addImages(event: any): void {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+      this.files = Array.from(target.files);
+    } else {
+      this.files = [];
     }
   }
 
@@ -61,14 +62,7 @@ export class RegisterComponent implements OnInit {
     this.dialog.open(CameraComponent).afterClosed().subscribe(result => {
       if (result instanceof File) {
         this.files.push(result);
-        this.images.push(URL.createObjectURL(result));
       }
     })
   }
-
-  getImage(image: File) {
-    return URL.createObjectURL(image);
-  }
-
-  protected readonly URL = URL;
 }

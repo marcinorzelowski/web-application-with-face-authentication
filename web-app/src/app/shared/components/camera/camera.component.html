@@ -1,16 +1,25 @@
 <div class="dialog">
   <div mat-dialog-title>
-  <h1>Camera</h1>
-</div>
-<div mat-dialog-content>
-  <img [src]="image" *ngIf="image">
-  <webcam [width]="500" [height]="500" [trigger]="triggerObservable" (imageCapture)="onImageCapture($event)" *ngIf="!image"></webcam>
-</div>
+    <h1>Camera</h1>
+  </div>
+  <div mat-dialog-content>
+    <img [src]="image" *ngIf="image">
+    <webcam [width]="500" [height]="500" [trigger]="triggerObservable" (imageCapture)="onImageCapture($event)" [videoOptions]="webcamOptions"
+            *ngIf="!image"></webcam>
+  </div>
 
-<div mat-dialog-actions>
-  <button type="button" mat-raised-button (click)="onSave()" *ngIf="image">Save</button>
-  <button type="button" mat-raised-button (click)="onCreateNewOne()" *ngIf="image">Create a new one</button>
-  <button type="button" mat-raised-button (click)="capture()" *ngIf="!image">Capture</button>
-  <button type="button" mat-raised-button color="warn" (click)="cancel()">Cancel</button>
-</div>
+  <input
+    type="file"
+    (change)="addImage($event)"
+    #fileInput
+    style="display: none;"
+  />
+
+  <div mat-dialog-actions>
+    <button type="button" mat-raised-button (click)="onSave()" *ngIf="image">Save</button>
+    <button type="button" mat-raised-button (click)="onCreateNewOne()" *ngIf="image">Create a new one</button>
+    <button type="button" mat-raised-button (click)="capture()" *ngIf="!image">Capture</button>
+    <button type="button" mat-raised-button (click)="fileInput.click()">Choose Files</button>
+    <button type="button" mat-raised-button color="warn" (click)="cancel()">Cancel</button>
+  </div>
 </div>

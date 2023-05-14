@@ -21,7 +21,7 @@
       </mat-form-field>
     </div>
 
-    <p>It is required to add 5 images in order to perform face authentication. You need to add {{5 - images.length}} more.</p>
+    <p>It is required to add 5 images in order to perform face authentication. You need to add {{5 - files.length}} more.</p>
 
     <mat-list>
       <mat-list-item *ngFor="let img of files; let i = index">
@@ -33,10 +33,17 @@
       </mat-list-item>
     </mat-list>
 
+    <input class="form-control" type="file"
+           (change)="addImages($event)" multiple
+           #fileInput style="display: none"
+    >
     <p>Already have an account? <a (click)="redirectToLogin()" class="signin-link">Log in.</a> </p>
     <div class="buttons">
-      <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || files.length != 5">Sign up</button>
-      <button mat-raised-button color="primary" type="button" (click)="createImage()">Add image </button>
+      <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || files.length != 3">Sign up</button>
+      <button mat-raised-button color="primary" type="button" [disabled]="files.length === 3" (click)="createImage()">Create an image</button>
+      <button mat-raised-button color="primary" type="button" (click)="fileInput.click()">Upload images</button>
+
+
     </div>
   </form>
 </div>

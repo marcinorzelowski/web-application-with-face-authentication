@@ -47,11 +47,13 @@ public class AuthenticationService {
                 .build();
     }
 
-    public AuthenticationResponse login(AuthenticationRequest request, MultipartFile image) {
+    public AuthenticationResponse login(AuthenticationRequest request, MultipartFile image) throws Exception {
 
         var user = repository.findApplicationUserByEmail(request.getEmail())
                 .orElseThrow();
-        faceRecognitionService.validateFace(image);
+        if (!faceRecognitionService.isFaceRecognized(image, user)) {
+            throw new Exception("error");
+        }
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
