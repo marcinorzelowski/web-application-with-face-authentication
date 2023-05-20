@@ -4,9 +4,10 @@ import com.orzelke.authservice.dto.AuthenticationRequest;
 import com.orzelke.authservice.dto.AuthenticationResponse;
 import com.orzelke.authservice.dto.RegisterRequest;
 import com.orzelke.authservice.enums.Role;
+import com.orzelke.authservice.error.FaceNotRecognizedException;
 import com.orzelke.authservice.model.ApplicationUser;
 import com.orzelke.authservice.repository.ApplicationUserRepository;
-import com.orzelke.authservice.repository.FeatureRepository;
+import com.orzelke.authservice.repository.AuthenticationProfileRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -25,7 +26,7 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final FaceRecognitionService faceRecognitionService;
-    private final FeatureRepository featureRepository;
+    private final AuthenticationProfileRepository authenticationProfileRepository;
 
     public AuthenticationResponse register(RegisterRequest request, MultipartFile[] images) {
         var user = ApplicationUser.builder()
@@ -36,7 +37,8 @@ public class AuthenticationService {
                 .role(Role.USER)
                 .build();
         ApplicationUser savedUser = repository.save(user);
-        featureRepository.saveAll(faceRecognitionService.getFaceFeatures(images, savedUser));
+        authenticationProfileRepository.save(faceRecognitionService.createProfile(images, savedUser));
+
 
         var jwtToken = jwtService.generateToken(user);
         return AuthenticationResponse.builder()
@@ -51,23 +53,20 @@ public class AuthenticationService {
 
         var user = repository.findApplicationUserByEmail(request.getEmail())
                 .orElseThrow();
-        if (!faceRecognitionService.isFaceRecognized(image, user)) {
-            throw new Exception("error");
+        if (faceRecognitionService.isFaceRecognized(image, user)) {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
+            var jwtToken = jwtService.generateToken(user);
+            return AuthenticationResponse.builder()
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
+                    .email(user.getEmail())
+                    .token(jwtToken)
+                    .build();
+        } else {
+            throw new FaceNotRecognizedException();
         }
-
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
-
-
-
-        //Process image
-        var jwtToken = jwtService.generateToken(user);
-        return AuthenticationResponse.builder()
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .email(user.getEmail())
-                .token(jwtToken)
-                .build();
     }
+
 }

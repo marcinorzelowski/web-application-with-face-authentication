@@ -15,9 +15,9 @@ import java.util.List;
 public interface FaceRecognitionClient {
 
     @PostMapping(value = "/image", consumes = "multipart/form-data")
-    ResponseEntity<List<FeatureDTO>> processImage(@RequestPart("image") MultipartFile image);
+    ResponseEntity<List<Double>> processImage(@RequestPart("image") MultipartFile image);
 
 
     @PostMapping(value = "/images", consumes = "multipart/form-data")
-    ResponseEntity<List<FeatureDTO>> processImages(@RequestPart("images") MultipartFile[] images);
+    ResponseEntity<List<List<Double>>> processImages(@RequestPart("images") MultipartFile[] images);
 }

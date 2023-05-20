@@ -13,6 +13,7 @@ import {CameraComponent} from "../../../shared/components/camera/camera.componen
 })
 export class RegisterComponent implements OnInit {
   public form!: FormGroup;
+  public errorMessage = false;
   public files: File[] = [];
 
   constructor(private authService: AuthService,
@@ -36,6 +37,9 @@ export class RegisterComponent implements OnInit {
     this.authService.register(this.form.value, this.files).pipe(first()).subscribe({
       next: () => {
         this.router.navigate(['../diploma']);
+      },
+      error: err => {
+        this.errorMessage = true;
       }
     })
   }

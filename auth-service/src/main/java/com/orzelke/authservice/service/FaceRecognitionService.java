@@ -1,172 +1,71 @@
 package com.orzelke.authservice.service;
 
 import com.orzelke.authservice.client.FaceRecognitionClient;
-import com.orzelke.authservice.dto.FeatureDTO;
-import com.orzelke.authservice.enums.FeatureType;
-import com.orzelke.authservice.mapper.FeatureMapper;
 import com.orzelke.authservice.model.ApplicationUser;
-import com.orzelke.authservice.model.Feature;
-import com.orzelke.authservice.repository.ApplicationUserRepository;
-import com.orzelke.authservice.repository.FeatureRepository;
-import com.orzelke.authservice.utils.MathUtils;
+import com.orzelke.authservice.model.AuthenticationProfile;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-
 import org.apache.commons.math3.ml.distance.EuclideanDistance;
 import org.apache.commons.math3.ml.distance.ManhattanDistance;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Comparator;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class FaceRecognitionService {
-    private static final Logger logger = LoggerFactory.getLogger(FaceRecognitionService.class);
     private final FaceRecognitionClient faceRecognitionClient;
-    private final FeatureMapper featureMapper;
-    private final ApplicationUserRepository applicationUserRepository;
+    public AuthenticationProfile createProfile(MultipartFile[] images, ApplicationUser user) {
+        List<List<Double>> featuresVectors = faceRecognitionClient.processImages(images).getBody();
+        double[] meanVector = calculateMeanVector(featuresVectors);
 
-    private static final float THRESHOLD = 96.00F;
-
-    public boolean isFaceRecognized(MultipartFile file, ApplicationUser user) {
-        List<FeatureDTO> calculatedFeatures = faceRecognitionClient.processImage(file).getBody();
-        List<FeatureDTO> featuresFromDatabase = user.getFeatures().stream().map(featureMapper::toDTO).toList();
-
-        logger.info("Loaded features: {}", calculatedFeatures);
-        logger.info("User features: {}", featuresFromDatabase);
-
-        double finalMatching = 100 - calculateMatchingScore(featuresFromDatabase, calculatedFeatures);
-        logger.info("Final Matching is equal: {} %", finalMatching);
-        return finalMatching > THRESHOLD;
+        return AuthenticationProfile.builder()
+                .user(user)
+                .vector(Arrays.toString(meanVector))
+                .threshold(calculateThreshold(meanVector, featuresVectors))
+                .build();
     }
 
-    public List<Feature> getFaceFeatures(MultipartFile[] images, ApplicationUser savedUser) {
-        List<FeatureDTO> features = faceRecognitionClient.processImages(images).getBody();
-
-        return features.stream().map(featureDTO -> Feature.builder()
-                .value(featureDTO.getValue())
-                .type(featureDTO.getType())
-                .user(savedUser)
-                .build()).collect(Collectors.toList());
+    private double calculateThreshold(double[] meanVector, List<List<Double>> featuresVectors) {
+        ManhattanDistance manhattanDistance = new ManhattanDistance();
+        List<Double> distances = new ArrayList<>();
+        for (List<Double> vector : featuresVectors) {
+            double[] vectorDouble = vector.stream().mapToDouble(Double::doubleValue).toArray();
+            distances.add(manhattanDistance.compute(meanVector, vectorDouble));
+        }
+        return distances.stream().max(Double::compareTo).orElse(distances.get(0));
     }
 
-    private double calculateMatchingScore(List<FeatureDTO> dbFeatures, List<FeatureDTO> imgFeatures) {
-        validateFeatures(dbFeatures, imgFeatures);
-
-        //sort
-        double[] dbFeaturesValues = dbFeatures.stream()
-                .sorted(Comparator.comparing(FeatureDTO::getType))
-                .mapToDouble(FeatureDTO::getValue)
+    private double[] calculateMeanVector(List<List<Double>> featuresVectors) {
+        int vectorSize = featuresVectors.get(0).size();
+        return IntStream.range(0, vectorSize)
+                .mapToDouble(i -> featuresVectors.stream()
+                        .mapToDouble(value -> value.get(i))
+                        .average().getAsDouble())
                 .toArray();
-        double[] imgFeaturesValues = imgFeatures.stream()
-                .sorted(Comparator.comparing(FeatureDTO::getType))
-                .mapToDouble(FeatureDTO::getValue)
+    }
+
+
+    public boolean isFaceRecognized(MultipartFile image, ApplicationUser user) {
+        List<Double> faceFeatures = faceRecognitionClient.processImage(image).getBody();
+        double[] faceVector = faceFeatures.stream().mapToDouble(Double::doubleValue).toArray();
+
+        EuclideanDistance euclideanDistance = new EuclideanDistance();
+
+        AuthenticationProfile profile = user.getAuthenticationProfile();
+        String vectorString = profile.getVector().replace("[", "").replace("]", "").replace(" ", "");
+        double[] meanVector = Arrays.stream(vectorString.split(","))
+                .mapToDouble(Double::parseDouble)
                 .toArray();
-
-        getClosestEuclidean(imgFeaturesValues);
-        getClosestManhattan(imgFeaturesValues);
-        getClosestMahalanobis(imgFeaturesValues);
-
-        logger.info("Manhattan distance: {}, EuclideanDistance: {}, Cosine distance: {}, Mahalanobis Distance: {}", new ManhattanDistance().compute(dbFeaturesValues, imgFeaturesValues),
-                new EuclideanDistance().compute(dbFeaturesValues, imgFeaturesValues), MathUtils.cosineDistance(imgFeaturesValues, dbFeaturesValues), MathUtils.mahalanobisDistance(imgFeaturesValues, dbFeaturesValues, getDatabase()));
-
-        return MathUtils.computeGmd(dbFeaturesValues, imgFeaturesValues);
-    }
-
-    private void getClosestEuclidean(double[] imgFeaturesValues) {
-        double minVal = 3000;
-        String minName = "NONE";
-        List<ApplicationUser> allUsers = applicationUserRepository.findAll();
-        for (ApplicationUser applicationUser : allUsers) {
-            double[] vector = applicationUser.getFeatures().stream()
-                    .map(featureMapper::toDTO)
-                    .sorted(Comparator.comparing(FeatureDTO::getType))
-                    .mapToDouble(FeatureDTO::getValue)
-                    .toArray();
-
-            double distance = new EuclideanDistance().compute(vector, imgFeaturesValues);
-            if (distance < minVal) {
-                minVal = distance;
-                minName = applicationUser.getFirstName();
-            }
-        }
-        logger.info("Euclidean distance closest to {} with distance {}", minName, minVal);
-    }
-
-    private void getClosestManhattan(double[] imgFeaturesValues) {
-        double minVal = 3000;
-        String minName = "NONE";
-        List<ApplicationUser> allUsers = applicationUserRepository.findAll();
-        for (ApplicationUser applicationUser : allUsers) {
-            double[] vector = applicationUser.getFeatures().stream()
-                    .map(featureMapper::toDTO)
-                    .sorted(Comparator.comparing(FeatureDTO::getType))
-                    .mapToDouble(FeatureDTO::getValue)
-                    .toArray();
-
-            double distance = new ManhattanDistance().compute(vector, imgFeaturesValues);
-            if (distance < minVal) {
-                minVal = distance;
-                minName = applicationUser.getFirstName();
-            }
-        }
-        logger.info("Manhattan distance closest to {} with distance {}", minName, minVal);
-    }
-
-    private void getClosestMahalanobis(double[] imgFeaturesValues) {
-        double minVal = 3000;
-        String minName = "NONE";
-        List<ApplicationUser> allUsers = applicationUserRepository.findAll();
-        for (ApplicationUser applicationUser : allUsers) {
-            double[] vector = applicationUser.getFeatures().stream()
-                    .map(featureMapper::toDTO)
-                    .sorted(Comparator.comparing(FeatureDTO::getType))
-                    .mapToDouble(FeatureDTO::getValue)
-                    .toArray();
-
-            double distance = MathUtils.mahalanobisDistance(vector, imgFeaturesValues, getDatabase());
-            if (distance < minVal) {
-                minVal = distance;
-                minName = applicationUser.getFirstName();
-            }
-        }
-        logger.info("Mahalanobis distance closest to {} with distance {}", minName, minVal);
-    }
-
-    private double[][] getDatabase() {
-        List<ApplicationUser> allUsers = applicationUserRepository.findAll();
-        double[][] database = new double[allUsers.size()][];
-
-        for (int i = 0; i < allUsers.size(); i++) {
-            ApplicationUser applicationUser = allUsers.get(i);
-
-            double[] vector = applicationUser.getFeatures().stream()
-                    .map(featureMapper::toDTO)
-                    .sorted(Comparator.comparing(FeatureDTO::getType))
-                    .mapToDouble(FeatureDTO::getValue)
-                    .toArray();
-            database[i] = vector;
-        }
-
-        return database;
-    }
-
-
-
-    private void validateFeatures(List<FeatureDTO> dbFeatures, List<FeatureDTO> imgFeatures) {
-        if (dbFeatures.size() != imgFeatures.size()) {
-            logger.error("Wrong features");
-        }
-        HashSet<FeatureType> dbFeaturesTypes = dbFeatures.stream().map(FeatureDTO::getType).collect(Collectors.toCollection(HashSet::new));
-        HashSet<FeatureType> imgFeatureTypes = imgFeatures.stream().map(FeatureDTO::getType).collect(Collectors.toCollection(HashSet::new));
-
-        if (!dbFeaturesTypes.equals(imgFeatureTypes)) {
-            logger.error("Wrong");
-        }
+        double distance = euclideanDistance.compute(meanVector, faceVector);
+        System.out.println(distance);
+        return euclideanDistance.compute(meanVector, faceVector) < profile.getThreshold();
     }
 }
+

@@ -1,4 +1,3 @@
-import numpy
 import werkzeug
 from flask import jsonify
 from flask_restx import Namespace, Resource, fields, reqparse
@@ -62,8 +61,7 @@ class SingleImageUpload(Resource):
             # Decode the numpy array as an image using OpenCV
 
             image = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
-            return api.marshal(face_recognition_service.extract_features(image), feature_model), 200
-
+            return face_recognition_service.extract_features(image), 200
         except FacesNotFound as e:
             return {"error": str(e.message)}, 400
         except Exception as e:
@@ -90,8 +88,8 @@ class MultipleImagesUpload(Resource):
                 image_data = np.frombuffer(image_file.read(), np.uint8)
                 image = cv2.imdecode(image_data, cv2.IMREAD_COLOR)
                 images.append(image)
-
-            return api.marshal(face_recognition_service.extract_mean_features(images), feature_model), 200
+            features = face_recognition_service.extract_mean_features(images)
+            return features, 200
         except FacesNotFound as e:
             return {"error": str(e.message)}, 400  # Use a colon (:) instead of a comma (,)
         except Exception as e:

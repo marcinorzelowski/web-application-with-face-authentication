@@ -31,11 +31,9 @@ public class ApplicationUser implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL)
-    private List<Diploma> diplomas;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Feature> features;
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private AuthenticationProfile authenticationProfile;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

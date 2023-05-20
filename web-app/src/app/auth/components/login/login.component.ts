@@ -13,6 +13,7 @@ import {CameraComponent} from "../../../shared/components/camera/camera.componen
 })
 export class LoginComponent implements OnInit {
   public form!: FormGroup;
+  public errorMessage = false;
 
   constructor(private authService: AuthService,
               private router: Router,
@@ -34,6 +35,8 @@ export class LoginComponent implements OnInit {
       this.authService.login(this.form.value, result).pipe(first()).subscribe({
         next: () => {
           this.router.navigate(['../diploma']);
+        }, error: err => {
+          this.errorMessage = true;
         }
       })
     })
