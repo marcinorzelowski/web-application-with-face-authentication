@@ -6,8 +6,6 @@ import {MatToolbarModule} from "@angular/material/toolbar";
 import {MatButtonModule} from "@angular/material/button";
 import { DiplomaContainerComponent } from './components/diploma-container/diploma-container.component';
 import {MatCardModule} from "@angular/material/card";
-import { DiplomantInfoComponent } from './components/diplomant-info/diplomant-info.component';
-import { DiplomaListComponent } from './components/diploma-list/diploma-list.component';
 import {MatDividerModule} from "@angular/material/divider";
 import {MatListModule} from "@angular/material/list";
 import {MatTableModule} from "@angular/material/table";
@@ -18,8 +16,7 @@ import {MatTableModule} from "@angular/material/table";
 
 
     DiplomaContainerComponent,
-      DiplomantInfoComponent,
-      DiplomaListComponent
+
   ],
   imports: [
     CommonModule,

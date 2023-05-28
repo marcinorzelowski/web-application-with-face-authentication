@@ -1,15 +1,12 @@
-import datetime
+import math
 import os.path
 import uuid
-from uuid import UUID
 
-import dlib
-from scipy.spatial.distance import euclidean, cityblock, cosine, mahalanobis
 import cv2
-import math
+import dlib
 import numpy as np
+from scipy.spatial.distance import euclidean, cityblock, cosine, mahalanobis
 from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -136,7 +133,11 @@ def calculate_features(face_image):
             landmarks, 16, 45))
 
     ]
-    return features
+    eye_distance = calculate_distance_on_landmark(landmarks, 36, 45)
+
+    features = np.array(features) / eye_distance
+
+    return features.tolist()
 
 
 def calculate_feature_vector(img):
@@ -225,12 +226,14 @@ def check_images(X, y):
             os.makedirs('saved/' + str(label))
         cv2.imwrite('saved/{}/{}.jpg'.format(label, idx), img)
 
+
 def compute_covariance_matrix(X):
     X = np.array(X)
     mean = np.mean(X, axis=0)
     X_centered = X - mean
     covariance_matrix = np.dot(X_centered.T, X_centered) / (X.shape[0] - 1)
     return covariance_matrix, mean
+
 
 def calculate_knn_accuracy(X_train, y_train, X_test, y_test, n_neighbors=1, metric='euclidean'):
     knn = make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors=n_neighbors, metric=metric))
@@ -279,16 +282,109 @@ def calculate_mahalanobis_accuracy(X_train, y_train, X_test, y_test):
     print('Accuracy: {}, Correct: {}, Incorrect: {}'.format(correct / (correct + incorrect), correct, incorrect))
 
 
+def calculate_acc(X_train, y_train, X_test, y_test, t_factor):
+    corr, neg = 0, 0
+    X_train = np.array(X_train)
+    y_test = np.array(y_test)
+    X_test = np.array(X_test)
+    y_train = np.array(y_train)
+    for label in np.unique(y_train):
+        data = X_train[y_train == label]
+        test_correct = X_test[y_test == label]
+        test_n_correct = X_test[y_test != label]
+        mean_v = np.mean(data, axis=0)
+        distances = []
+        for vector in data:
+            distances.append(euclidean(mean_v, vector))
+        treshold = t_factor * max(distances)
+        for test_v in test_correct:
+            if euclidean(test_v, mean_v) < treshold:
+                corr += 1
+            else:
+                neg += 1
+        for test_v in test_n_correct:
+            if euclidean(test_v, mean_v) < treshold:
+                neg += 1
+            else:
+                corr += 1
+
+    print('Correct: {}, not correct: {}, acc: {}, factor: {}'.format(corr, neg, corr/(corr + neg), t_factor))
+
+
+def calculate_acc_manh(X_train, y_train, X_test, y_test, t_factor):
+    corr, neg = 0, 0
+    X_train = np.array(X_train)
+    y_test = np.array(y_test)
+    X_test = np.array(X_test)
+    y_train = np.array(y_train)
+    for label in np.unique(y_train):
+        data = X_train[y_train == label]
+        test_correct = X_test[y_test == label]
+        test_n_correct = X_test[y_test != label]
+        mean_v = np.mean(data, axis=0)
+        distances = []
+        for vector in data:
+            distances.append(cityblock(mean_v, vector))
+        treshold = t_factor * max(distances)
+        for test_v in test_correct:
+            if cityblock(test_v, mean_v) < treshold:
+                corr += 1
+            else:
+                neg += 1
+        for test_v in test_n_correct:
+            if cityblock(test_v, mean_v) < treshold:
+                neg += 1
+            else:
+                corr += 1
+
+    print('Correct: {}, not correct: {}, acc: {}, factor: {}'.format(corr, neg, corr/(corr + neg), t_factor))
+
+
+def calculate_acc_cos(X_train, y_train, X_test, y_test, t_factor):
+    corr, neg = 0, 0
+    X_train = np.array(X_train)
+    y_test = np.array(y_test)
+    X_test = np.array(X_test)
+    y_train = np.array(y_train)
+    for label in np.unique(y_train):
+        data = X_train[y_train == label]
+        test_correct = X_test[y_test == label]
+        test_n_correct = X_test[y_test != label]
+        mean_v = np.mean(data, axis=0)
+        distances = []
+        for vector in data:
+            distances.append(cosine(mean_v, vector))
+        treshold = t_factor * max(distances)
+        for test_v in test_correct:
+            if cosine(test_v, mean_v) < treshold:
+                corr += 1
+            else:
+                neg += 1
+        for test_v in test_n_correct:
+            if cosine(test_v, mean_v) < treshold:
+                neg += 1
+            else:
+                corr += 1
+
+    print('Correct: {}, not correct: {}, acc: {}, factor: {}'.format(corr, neg, corr/(corr + neg), t_factor))
+
+
 if __name__ == '__main__':
     X, y = load_dataset()
     check_images(X, y)
     X_train, X_test, y_train, y_test = create_database(X, y)
     X_train_d, X_test_d, y_train_d, y_test_d = create_database_for_distances(X, y)
+    calculate_knn_accuracy(X_train, y_train, X_test, y_test, n_neighbors=1, metric='cosine')  # Euclidean distance
 
+    calculate_knn_accuracy(X_train, y_train, X_test, y_test, n_neighbors=1, metric='manhattan')  # Euclidean distance
     calculate_knn_accuracy(X_train, y_train, X_test, y_test, n_neighbors=1)  # Euclidean distance
-    calculate_knn_accuracy(X_train, y_train, X_test, y_test, n_neighbors=1, metric='manhattan')  # Manhattan distance
-    calculate_knn_accuracy(X_train, y_train, X_test, y_test, n_neighbors=1, metric='cosine')  # Cosine distance
-    calculate_mahalanobis_accuracy(X_train_d, y_train_d, X_test_d, y_test_d)
-
-
+    calculate_knn_accuracy(X_train, y_train, X_test, y_test, n_neighbors=3, metric='cosine')  # Euclidean distance
+    calculate_knn_accuracy(X_train, y_train, X_test, y_test, n_neighbors=3, metric='manhattan')  # Euclidean distance
+    calculate_knn_accuracy(X_train, y_train, X_test, y_test, n_neighbors=3)  # Eucl
+    t_factor = 1.0
+    while (t_factor < 1.3):
+        calculate_acc(X_train, y_train, X_test, y_test, t_factor)
+        calculate_acc_manh(X_train, y_train, X_test, y_test, t_factor)
+        calculate_acc_cos(X_train, y_train, X_test, y_test, t_factor)
+        t_factor += 0.05
 

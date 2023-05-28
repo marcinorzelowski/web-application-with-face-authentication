@@ -43,7 +43,7 @@ def get_non_faces_images(annotations, stride):
                 print('Created {} new images'.format(i))
             i += 1
 
-        if i > 20000:
+        if i > 30000:
             break
 
 
@@ -88,11 +88,11 @@ def get_non_faces_parts(bounding_boxes, img, stride):
 def load_dataset(n_pos_images, n_neg_images):
     X, y = [], []
     for i in range(n_neg_images):
-        img = cv2.imread('dataset/negative/' + str(i) + '.jpg', cv2.IMREAD_GRAYSCALE)
+        img = cv2.imread('dataset/negative/' + str(i+20000) + '.jpg', cv2.IMREAD_GRAYSCALE)
         X.append(img)
         y.append(0)
     for i in range(n_pos_images):
-        img = cv2.imread('dataset/positive/' + str(i) + '.jpg', cv2.IMREAD_GRAYSCALE)
+        img = cv2.imread('dataset/positive/' + str(i+10000) + '.jpg', cv2.IMREAD_GRAYSCALE)
         X.append(img)
         y.append(1)
     return np.array(X), np.array(y)

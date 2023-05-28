@@ -31,4 +31,4 @@ class Adaboost:
         for alpha, clf in zip(self.alphas, self.clfs):
             classification = clf.classify(integral_image)
             total += alpha * classification
-        return 1 if total >= 0.5 * sum(self.alphas) else 0
+        return total / sum(self.alphas)

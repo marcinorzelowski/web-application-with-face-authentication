@@ -17,7 +17,10 @@ class WeakClassifier:
 
     def train(self, feature_values, labels, weights):
         # sorting according to the feature values
-        sorted_features = sorted(zip(feature_values, labels, weights), key=lambda a: a[0])
+        sorted_features = sorted(zip(feature_values,
+                                     labels,
+                                     weights),
+                                 key=lambda a: a[0])
         error = sum(weight for value, label, weight in sorted_features if label == 0)
         min_error = error
         for value, label, weight in sorted_features:

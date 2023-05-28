@@ -91,7 +91,7 @@ class MultipleImagesUpload(Resource):
             features = face_recognition_service.extract_mean_features(images)
             return features, 200
         except FacesNotFound as e:
-            return {"error": str(e.message)}, 400  # Use a colon (:) instead of a comma (,)
+            return {"error": str(e.message)}, 400
         except Exception as e:
             return {"error": str(e)}, 500
 

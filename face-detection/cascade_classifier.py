@@ -18,28 +18,35 @@ class CascadeClassifier:
         self.layers = layers
         self.clfs = []
 
-    def fit(self, X, y, X_test, y_test):
+    def fit(self, X, y):
         pos, neg = np.sum(y), len(y) - np.sum(y)
-        print('Started training dataset with {} positive, {} negative samples.'.format(pos, neg))
+        print('Started training dataset with {} positive, {} negative samples.'
+              .format(pos, neg))
         img_h, img_w = X[0].shape[:2]
 
         # Calculate haar features.
         features = haar_feature_utils.generate_haar_features(img_w, img_h)
-        print('Created {} features for image {} x {}'.format(len(features), img_h, img_w))
+        print('Created {} features for image {} x {}'
+              .format(len(features), img_h, img_w))
 
         # Prepare data
         integral_images = np.array([cv2.integral(x) for x in X], dtype=np.uint32)
-        feature_values = haar_feature_utils.calculate_haar_feature_values(features, X)
+        feature_values = haar_feature_utils.\
+            calculate_haar_feature_values(features, X)
 
         pos_idxs, neg_idxs = np.where(y == 1)[0], np.where(y == 0)[0]
 
-        for t in tqdm(self.layers, total=len(self.layers), position=0, leave=False):
+        for t in tqdm(self.layers,
+                      total=len(self.layers),
+                      position=0,
+                      leave=False):
             print('Started training layer with {} weak classifiers.'.format(t))
             used_indexes = np.concatenate((pos_idxs, neg_idxs))
-            print(len(used_indexes))
-
             clf = adaboost.Adaboost(t)
-            clf.fit(feature_values[:, used_indexes], features, integral_images[used_indexes], y[used_indexes])
+            clf.fit(feature_values[:, used_indexes],
+                    features,
+                    integral_images[used_indexes],
+                    y[used_indexes])
             self.clfs.append(clf)
             new_neg_idx = []
             for neg_idx in neg_idxs:
@@ -49,7 +56,6 @@ class CascadeClassifier:
                 print('All samples were classified correctly.')
                 break
             neg_idxs = np.array(new_neg_idx)
-            self.evaluate(X_test, y_test)
 
     def classify(self, img):
         integral_image = cv2.integral(img)
@@ -71,8 +77,7 @@ class CascadeClassifier:
         h, w = image.shape[:2]
         boxes = []
         probs = []
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        image = clahe.apply(image)
+
         image_pyramid = self.create_image_pyramid(image)
         for img in image_pyramid:
             scale = (h / img.shape[0])

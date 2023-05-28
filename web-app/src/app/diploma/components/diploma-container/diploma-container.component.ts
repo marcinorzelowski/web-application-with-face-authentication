@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import {Diploma} from "../../model/diploma.model";
+import {DiplomaService} from "../../service/diploma.service";
 
 @Component({
   selector: 'app-diploma-container',
@@ -7,9 +9,13 @@ import { Component, OnInit } from '@angular/core';
 })
 export class DiplomaContainerComponent implements OnInit {
 
-  constructor() { }
+  public diploma!: Diploma
+  constructor(private diplomaService: DiplomaService) { }
 
   ngOnInit(): void {
+    this.diplomaService.getDiploma().subscribe(data => {
+      this.diploma = data;
+    })
   }
 
 }

@@ -15,6 +15,7 @@ export class RegisterComponent implements OnInit {
   public form!: FormGroup;
   public errorMessage = false;
   public files: File[] = [];
+  public error!: string;
 
   constructor(private authService: AuthService,
               private router: Router,
@@ -39,6 +40,7 @@ export class RegisterComponent implements OnInit {
         this.router.navigate(['../diploma']);
       },
       error: err => {
+        this.error = err.error.error;
         this.errorMessage = true;
       }
     })

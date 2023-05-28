@@ -14,6 +14,19 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(new ExceptionResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(FaceNotDetectedException.class)
+    public ResponseEntity<ExceptionResponse> handleFaceNotDetectedException(FaceNotDetectedException e) {
+        return new ResponseEntity<>(new ExceptionResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
+    }
+    @ExceptionHandler(AuthException.class)
+    public ResponseEntity<ExceptionResponse> handleAuthException(AuthException e) {
+        return new ResponseEntity<>(new ExceptionResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
+    }
+    @ExceptionHandler(RegistrationException.class)
+    public ResponseEntity<ExceptionResponse> handleRegistrationException(RegistrationException e) {
+        return new ResponseEntity<>(new ExceptionResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(UnknownException.class)
     public ResponseEntity<ExceptionResponse> handleUnknownException(UnknownException e) {
         return new ResponseEntity<>(new ExceptionResponse(e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);

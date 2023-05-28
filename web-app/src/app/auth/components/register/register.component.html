@@ -1,5 +1,5 @@
-<p *ngIf="errorMessage">
-  Wrong username or passsword or face was not recognized. Try again.
+<p *ngIf="errorMessage" class="error">
+  {{error}}
 </p>
 
 <div class="row">
@@ -37,15 +37,11 @@
       </mat-list-item>
     </mat-list>
 
-    <input class="form-control" type="file"
-           (change)="addImages($event)" multiple
-           #fileInput style="display: none"
-    >
+
     <p>Already have an account? <a (click)="redirectToLogin()" class="signin-link">Log in.</a> </p>
     <div class="buttons">
-      <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || files.length != 3">Sign up</button>
-      <button mat-raised-button color="primary" type="button" [disabled]="files.length === 3" (click)="createImage()">Create an image</button>
-      <button mat-raised-button color="primary" type="button" (click)="fileInput.click()">Upload images</button>
+      <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || files.length != 5">Sign up</button>
+      <button mat-raised-button color="primary" type="button" [disabled]="files.length === 5" (click)="createImage()">Create an image</button>
 
 
     </div>

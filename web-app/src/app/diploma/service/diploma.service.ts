@@ -10,7 +10,7 @@ export class DiplomaService {
 
   constructor(private httpClient: HttpClient) { }
 
-  public getDiplomas(): Observable<Diploma[]> {
-    return this.httpClient.get<Diploma[]>('http://localhost:8080/api/diploma');
+  public getDiploma(): Observable<Diploma> {
+    return this.httpClient.get<Diploma>('http://localhost:8080/api/diploma');
   }
 }

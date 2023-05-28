@@ -29,3 +29,7 @@ mat-grid-tile {
   background: rgba(255, 255, 255, 0.8);
   border-radius: 50%;
 }
+
+.error {
+  color: red;
+}

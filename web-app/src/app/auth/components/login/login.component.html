@@ -1,5 +1,5 @@
-<p *ngIf="errorMessage" class="alert-danger">
-  Wrong username or passsword or face was not recognized. Try again.
+<p *ngIf="errorMessage" class="error">
+  {{error}}
 </p>
 <div class="row">
       <form [formGroup]="form" (ngSubmit)="onSubmit()">

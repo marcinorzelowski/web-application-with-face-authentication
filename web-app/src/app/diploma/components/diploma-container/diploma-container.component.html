@@ -3,16 +3,14 @@
     <mat-card-header>
       <mat-card-title>
         <h1>
-          Graduate Profile
+          Praca dyplomowa
         </h1>
       </mat-card-title>
     </mat-card-header>
     <mat-card-content>
-      <app-diplomant-info></app-diplomant-info>
-      <mat-divider class="divider">
-      </mat-divider>
-
-      <app-diploma-list></app-diploma-list>
+        <strong>Tytuł pracy:</strong> {{diploma.title}}
+        <br>
+        <strong>Data obrony:</strong> {{diploma.dateOfDefence}}
     </mat-card-content>
 
   </mat-card>

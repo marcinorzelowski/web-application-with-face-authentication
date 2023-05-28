@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import {FormControl, FormGroup, Validators} from "@angular/forms";
 import {AuthService} from "../../../shared/services/auth.service";
-import {ActivatedRoute, Router} from "@angular/router";
+import {Router} from "@angular/router";
 import {first} from "rxjs";
 import {MatDialog} from "@angular/material/dialog";
 import {CameraComponent} from "../../../shared/components/camera/camera.component";
@@ -14,6 +14,7 @@ import {CameraComponent} from "../../../shared/components/camera/camera.componen
 export class LoginComponent implements OnInit {
   public form!: FormGroup;
   public errorMessage = false;
+  public error!: string
 
   constructor(private authService: AuthService,
               private router: Router,
@@ -37,6 +38,7 @@ export class LoginComponent implements OnInit {
           this.router.navigate(['../diploma']);
         }, error: err => {
           this.errorMessage = true;
+          this.error = err.error.error;
         }
       })
     })

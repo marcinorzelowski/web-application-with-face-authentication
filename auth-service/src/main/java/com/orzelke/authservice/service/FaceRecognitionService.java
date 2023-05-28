@@ -1,6 +1,7 @@
 package com.orzelke.authservice.service;
 
 import com.orzelke.authservice.client.FaceRecognitionClient;
+import com.orzelke.authservice.error.FaceNotDetectedException;
 import com.orzelke.authservice.model.ApplicationUser;
 import com.orzelke.authservice.model.AuthenticationProfile;
 import jakarta.transaction.Transactional;
@@ -21,25 +22,40 @@ import java.util.stream.IntStream;
 @Transactional
 public class FaceRecognitionService {
     private final FaceRecognitionClient faceRecognitionClient;
-    public AuthenticationProfile createProfile(MultipartFile[] images, ApplicationUser user) {
-        List<List<Double>> featuresVectors = faceRecognitionClient.processImages(images).getBody();
-        double[] meanVector = calculateMeanVector(featuresVectors);
+    public AuthenticationProfile createProfile(
+            MultipartFile[] images,
+            ApplicationUser user) {
+        try {
+            List<List<Double>> featuresVectors = faceRecognitionClient
+                    .processImages(images)
+                    .getBody();
+            double[] meanVector = calculateMeanVector(featuresVectors);
 
-        return AuthenticationProfile.builder()
-                .user(user)
-                .vector(Arrays.toString(meanVector))
-                .threshold(calculateThreshold(meanVector, featuresVectors))
-                .build();
+            return AuthenticationProfile.builder()
+                    .user(user)
+                    .vector(Arrays.toString(meanVector))
+                    .threshold(calculateThreshold(meanVector, featuresVectors))
+                    .build();
+        } catch (Exception e) {
+            throw new FaceNotDetectedException("Could not detect faces on images.");
+        }
+
     }
 
-    private double calculateThreshold(double[] meanVector, List<List<Double>> featuresVectors) {
+    private double calculateThreshold(
+            double[] meanVector,
+            List<List<Double>> featuresVectors) {
         ManhattanDistance manhattanDistance = new ManhattanDistance();
         List<Double> distances = new ArrayList<>();
         for (List<Double> vector : featuresVectors) {
-            double[] vectorDouble = vector.stream().mapToDouble(Double::doubleValue).toArray();
+            double[] vectorDouble = vector
+                    .stream()
+                    .mapToDouble(Double::doubleValue)
+                    .toArray();
             distances.add(manhattanDistance.compute(meanVector, vectorDouble));
         }
-        return distances.stream().max(Double::compareTo).orElse(distances.get(0));
+        return distances.stream().max(Double::compareTo)
+                .orElse(distances.get(0));
     }
 
     private double[] calculateMeanVector(List<List<Double>> featuresVectors) {
@@ -53,19 +69,31 @@ public class FaceRecognitionService {
 
 
     public boolean isFaceRecognized(MultipartFile image, ApplicationUser user) {
-        List<Double> faceFeatures = faceRecognitionClient.processImage(image).getBody();
-        double[] faceVector = faceFeatures.stream().mapToDouble(Double::doubleValue).toArray();
+        try {
+            List<Double> faceFeatures = faceRecognitionClient
+                    .processImage(image)
+                    .getBody();
+            double[] faceVector = faceFeatures.stream()
+                    .mapToDouble(Double::doubleValue)
+                    .toArray();
 
-        EuclideanDistance euclideanDistance = new EuclideanDistance();
+            ManhattanDistance manhattanDistance = new ManhattanDistance();
 
-        AuthenticationProfile profile = user.getAuthenticationProfile();
-        String vectorString = profile.getVector().replace("[", "").replace("]", "").replace(" ", "");
-        double[] meanVector = Arrays.stream(vectorString.split(","))
-                .mapToDouble(Double::parseDouble)
-                .toArray();
-        double distance = euclideanDistance.compute(meanVector, faceVector);
-        System.out.println(distance);
-        return euclideanDistance.compute(meanVector, faceVector) < profile.getThreshold();
+            AuthenticationProfile profile = user.getAuthenticationProfile();
+            String vectorString = profile.getVector()
+                    .replace("[", "")
+                    .replace("]", "")
+                    .replace(" ", "");
+            double[] meanVector = Arrays.stream(vectorString.split(","))
+                    .mapToDouble(Double::parseDouble)
+                    .toArray();
+            double distance = manhattanDistance.compute(meanVector, faceVector);
+            return manhattanDistance
+                    .compute(meanVector, faceVector) < profile.getThreshold();
+        } catch (Exception e) {
+            throw new FaceNotDetectedException("Could not detect faces on image.");
+        }
+
     }
 }
 

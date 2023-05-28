@@ -4,7 +4,8 @@ import com.orzelke.authservice.dto.AuthenticationRequest;
 import com.orzelke.authservice.dto.AuthenticationResponse;
 import com.orzelke.authservice.dto.RegisterRequest;
 import com.orzelke.authservice.enums.Role;
-import com.orzelke.authservice.error.FaceNotRecognizedException;
+import com.orzelke.authservice.error.AuthException;
+import com.orzelke.authservice.error.RegistrationException;
 import com.orzelke.authservice.model.ApplicationUser;
 import com.orzelke.authservice.repository.ApplicationUserRepository;
 import com.orzelke.authservice.repository.AuthenticationProfileRepository;
@@ -29,6 +30,10 @@ public class AuthenticationService {
     private final AuthenticationProfileRepository authenticationProfileRepository;
 
     public AuthenticationResponse register(RegisterRequest request, MultipartFile[] images) {
+        var exists = repository.findApplicationUserByEmail(request.getEmail()).isPresent();
+        if (exists) {
+            throw new RegistrationException("User with a given e-mail already exists.");
+        }
         var user = ApplicationUser.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
@@ -36,6 +41,7 @@ public class AuthenticationService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.USER)
                 .build();
+
         ApplicationUser savedUser = repository.save(user);
         authenticationProfileRepository.save(faceRecognitionService.createProfile(images, savedUser));
 
@@ -52,7 +58,7 @@ public class AuthenticationService {
     public AuthenticationResponse login(AuthenticationRequest request, MultipartFile image) throws Exception {
 
         var user = repository.findApplicationUserByEmail(request.getEmail())
-                .orElseThrow();
+                .orElseThrow(AuthException::new);
         if (faceRecognitionService.isFaceRecognized(image, user)) {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
@@ -65,7 +71,7 @@ public class AuthenticationService {
                     .token(jwtToken)
                     .build();
         } else {
-            throw new FaceNotRecognizedException();
+            throw new AuthException();
         }
     }
 

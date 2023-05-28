@@ -16,8 +16,9 @@ public class AuthenticationProfile {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
-    @Column(length = 1000)
+    @Column(length = 1000, nullable = false)
     private String vector;
+    @Column(nullable = false)
     private double threshold;
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
