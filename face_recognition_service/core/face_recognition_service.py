@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 class FaceRecognitionService:
     def __init__(self):
-        self.haar_cascade = cv2.CascadeClassifier('core/cascade.xml')
         self.landmark_predictor = dlib.shape_predictor('core/shape_predictor_68_face_landmarks.dat')
         self.cascade_classifier = CascadeClassifier.load('resources/result_11_05_1442')
 
